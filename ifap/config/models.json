@@ -1,0 +1,24 @@
+{
+  "_comment": "Model registry configuration (NFR-06). To add a model service: add its URL under 'services' and its models under 'models'. No code change in gateway, orchestrator, evaluator or dashboard is needed. Service URLs may use ${ENV_VAR:-default}.",
+  "services": {
+    "classical": "${IFAP_URL_CLASSICAL:-http://classical:8000}",
+    "dl": "${IFAP_URL_DL:-http://dl:8000}",
+    "qml": "${IFAP_URL_QML:-http://qml:8000}"
+  },
+  "baselines": { "VOLATILITY": "garch", "OPTION_PRICE": "black_scholes" },
+  "defaults": { "timeoutSec": 1200, "margin": 0.0, "tieTolerance": 0.01, "seed": 42 },
+  "models": [
+    { "name": "garch", "service": "classical", "family": "classical", "label": "GARCH(1,1) baseline",
+      "tasks": ["VOLATILITY"], "role": "baseline", "timeoutSec": 300, "config": {} },
+    { "name": "black_scholes", "service": "classical", "family": "classical", "label": "Black-Scholes baseline",
+      "tasks": ["OPTION_PRICE"], "role": "baseline", "timeoutSec": 300, "config": {} },
+    { "name": "random_forest", "service": "classical", "family": "classical", "label": "Random Forest",
+      "tasks": ["VOLATILITY", "OPTION_PRICE"], "timeoutSec": 300, "config": {} },
+    { "name": "gradient_boosting", "service": "classical", "family": "classical", "label": "Gradient Boosting",
+      "tasks": ["VOLATILITY", "OPTION_PRICE"], "timeoutSec": 300, "config": {} },
+    { "name": "lstm", "service": "dl", "family": "dl", "label": "LSTM",
+      "tasks": ["VOLATILITY", "OPTION_PRICE"], "timeoutSec": 900, "config": {} },
+    { "name": "qml_vqr", "service": "qml", "family": "qml", "label": "Variational quantum regressor (simulator)",
+      "tasks": ["VOLATILITY", "OPTION_PRICE"], "timeoutSec": 1200, "config": {} }
+  ]
+}
