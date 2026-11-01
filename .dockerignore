@@ -1,0 +1,9 @@
+.git
+.github
+var
+tests
+docs
+**/__pycache__
+.env
+*.md
+.devenv
