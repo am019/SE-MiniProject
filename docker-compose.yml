@@ -1,0 +1,126 @@
+# IFAP platform. First run:  python scripts/init_env.py  &&  docker compose up --build
+# Dashboard + API: http://127.0.0.1:${IFAP_PORT:-8080}   (SR-02: only the gateway publishes a port, on loopback)
+# Extensibility demo (TC-23):  IFAP_MODELS_CONFIG=/app/config/models.stub.json docker compose --profile stub up --build
+
+x-env: &env
+  IFAP_SERVICE_TOKEN: ${IFAP_SERVICE_TOKEN:?run python scripts/init_env.py}
+  IFAP_MODELS_CONFIG: ${IFAP_MODELS_CONFIG:-/app/config/models.json}
+  IFAP_DATA_DIR: /data
+  IFAP_ALLOW_FAULT_INJECTION: "0"
+
+x-base: &base
+  restart: unless-stopped
+  environment: *env
+  volumes:
+    - ifap-data:/data
+    - ./config:/app/config:ro
+  networks: [internal]
+  security_opt: ["no-new-privileges:true"]
+  healthcheck: &hc
+    test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+    interval: 30s
+    timeout: 5s
+    retries: 3
+    start_period: 30s
+    start_interval: 5s
+
+x-build-base: &build-base
+  context: .
+  target: base
+
+services:
+  gateway:
+    <<: *base
+    build: { <<: *build-base, args: { SERVICE: gateway } }
+    image: ifap/gateway
+    environment:
+      <<: *env
+      IFAP_JWT_SECRET: ${IFAP_JWT_SECRET:?run python scripts/init_env.py}
+      IFAP_ADMIN_PASSWORD: ${IFAP_ADMIN_PASSWORD:?run python scripts/init_env.py}
+      IFAP_ANALYST_PASSWORD: ${IFAP_ANALYST_PASSWORD:?run python scripts/init_env.py}
+    ports:
+      - "127.0.0.1:${IFAP_PORT:-8080}:8000"
+    networks: [internal, edge]
+    depends_on:
+      registry: { condition: service_healthy }
+      orchestrator: { condition: service_healthy }
+
+  registry:
+    <<: *base
+    build: { <<: *build-base, args: { SERVICE: registry } }
+    image: ifap/registry
+
+  ingestion:
+    <<: *base
+    build: { <<: *build-base, args: { SERVICE: ingestion } }
+    image: ifap/ingestion
+
+  features:
+    <<: *base
+    build: { <<: *build-base, args: { SERVICE: features } }
+    image: ifap/features
+
+  evaluation:
+    <<: *base
+    build: { <<: *build-base, args: { SERVICE: evaluation } }
+    image: ifap/evaluation
+
+  report:
+    <<: *base
+    build: { <<: *build-base, args: { SERVICE: report } }
+    image: ifap/report
+
+  orchestrator:
+    <<: *base
+    build: { <<: *build-base, args: { SERVICE: orchestrator } }
+    image: ifap/orchestrator
+    depends_on:
+      registry: { condition: service_healthy }
+      ingestion: { condition: service_healthy }
+      features: { condition: service_healthy }
+      evaluation: { condition: service_healthy }
+
+  # ---- model services (resource-limited, SR-07). IFAP_JOB_MEM_MB stays below mem_limit.
+  classical:
+    <<: *base
+    build: { context: ., target: classical, args: { SERVICE: classical } }
+    image: ifap/classical
+    environment: { <<: *env, IFAP_JOB_MEM_MB: "1536" }
+    cpus: 2.0
+    mem_limit: 2g
+    pids_limit: 256
+
+  dl:
+    <<: *base
+    build: { context: ., target: dl, args: { SERVICE: dl } }
+    image: ifap/dl
+    environment: { <<: *env, IFAP_JOB_MEM_MB: "3072" }
+    cpus: 2.0
+    mem_limit: 4g
+    pids_limit: 256
+
+  qml:
+    <<: *base
+    build: { context: ., target: qml, args: { SERVICE: qml } }
+    image: ifap/qml
+    environment: { <<: *env, IFAP_JOB_MEM_MB: "3072", IFAP_MAX_QUBITS: "8" }
+    cpus: 2.0
+    mem_limit: 4g
+    pids_limit: 256
+
+  # ---- extensibility demo: a new model service added by configuration only (NFR-06)
+  stub:
+    <<: *base
+    build: { <<: *build-base, args: { SERVICE: stub } }
+    image: ifap/stub
+    profiles: ["stub"]
+    mem_limit: 512m
+    pids_limit: 128
+
+volumes:
+  ifap-data:
+
+networks:
+  internal:
+    internal: true
+  edge:

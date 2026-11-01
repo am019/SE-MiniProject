@@ -1,0 +1,3 @@
+-r base.txt
+torch==2.14.1
+pennylane==0.45.1
