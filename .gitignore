@@ -1,0 +1,27 @@
+# SR-04: secrets, datasets and model artifacts must never be committed
+.env
+.env.*
+!.env.example
+.secrets.json
+var/
+data/*
+!data/sample/
+!data/sample/*.csv
+models/
+features/
+datasets/
+*.pt
+*.joblib
+*.pkl
+*.npz
+*.db
+*.db-wal
+*.db-shm
+# python / tooling
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+.devenv
+*.log
