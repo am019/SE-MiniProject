@@ -1,7 +1,0 @@
-# Everything needed to run the whole platform locally and the full test-suite
--r classical.txt
-torch==2.14.1
-pennylane==0.45.1
-pytest==9.1.1
-PyYAML==6.0.3
-playwright==1.58.0

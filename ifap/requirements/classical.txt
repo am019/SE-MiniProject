@@ -1,4 +1,0 @@
--r base.txt
-scikit-learn==1.9.1
-joblib==1.6.0
-arch==8.0.0
