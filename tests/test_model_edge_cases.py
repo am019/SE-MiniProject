@@ -1,3 +1,5 @@
+import time
+
 import pytest
 
 
@@ -15,26 +17,29 @@ def test_qml_qubit_limit_rejected(platform):
             "horizon": 5,
             "models": ["qml_vqr"],
             "seed": 42,
-            "modelConfig": {"qml_vqr": {"n_qubits": 999}},
+            "modelConfig": {
+                "qml_vqr": {"n_qubits": 999},
+            },
         },
     )
 
-    # The API may accept the experiment asynchronously and report the
-    # model-level configuration error in its final status.
     assert response.status_code == 202, response.text
     experiment_id = response.json()["experimentId"]
 
-    import time
-
     start = time.time()
     while time.time() - start < 120:
-        result = client.get(f"/api/experiments/{experiment_id}").json()
+        result_response = client.get(
+            f"/api/experiments/{experiment_id}"
+        )
+        assert result_response.status_code == 200, result_response.text
+        result = result_response.json()
+
         if result["status"] in ("COMPLETED", "FAILED"):
             break
+
         time.sleep(1)
 
-    model_results = result.get("models", {})
-    model_result = model_results.get("qml_vqr", {})
+    model_result = result.get("models", {}).get("qml_vqr", {})
 
     assert (
         result["status"] == "FAILED"
@@ -58,7 +63,7 @@ def test_invalid_model_configuration_rejected(platform):
             "models": ["random_forest"],
             "seed": 42,
             "modelConfig": {
-                "random_forest": {"n_estimators": -1}
+                "random_forest": {"n_estimators": -1},
             },
         },
     )
@@ -67,25 +72,34 @@ def test_invalid_model_configuration_rejected(platform):
 
     if response.status_code == 202:
         experiment_id = response.json()["experimentId"]
-        import time
-
         start = time.time()
+        result = {}
+
         while time.time() - start < 120:
-            result = client.get(f"/api/experiments/{experiment_id}").json()
+            result_response = client.get(
+                f"/api/experiments/{experiment_id}"
+            )
+            assert result_response.status_code == 200, result_response.text
+            result = result_response.json()
+
             if result["status"] in ("COMPLETED", "FAILED"):
                 break
+
             time.sleep(1)
 
-        model_result = result.get("models", {}).get("random_forest", {})
+        model_result = result.get("models", {}).get(
+            "random_forest", {}
+        )
+
         assert (
-            result["status"] == "FAILED"
+            result.get("status") == "FAILED"
             or model_result.get("status") == "FAILED"
         ), result
 
 
 @pytest.mark.integration
 def test_tiny_dataset_handled(platform):
-    """A tiny dataset should fail gracefully rather than crash the platform."""
+    """The platform should remain healthy after loading sample data."""
     client = platform.client()
 
     response = client.post(
@@ -93,5 +107,5 @@ def test_tiny_dataset_handled(platform):
     )
     assert response.status_code == 201, response.text
 
-    health = client.get("/api/health")
+    health = client.get("/api/admin/health")
     assert health.status_code == 200, health.text
