@@ -33,7 +33,7 @@ jobs:
 
   integration:
     name: Integration tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: unit
     timeout-minutes: 45
     steps:
