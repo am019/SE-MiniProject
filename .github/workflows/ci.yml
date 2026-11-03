@@ -47,6 +47,8 @@ jobs:
         run: |
           pip install torch==2.14.1 --index-url https://download.pytorch.org/whl/cpu
           pip install -r requirements/dev.txt
+      - name: Install Playwright browsers
+        run: python -m playwright install --with-deps chromium firefox
       - name: Integration tests (real multi-process platform)
         run: pytest -m integration -q
 
