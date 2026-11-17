@@ -112,3 +112,29 @@ Manual check done on 14 November 2026 on Windows (same laptop as above), logged 
 
 - A clean-machine `docker compose up --build` on a second computer.
 - QML and LSTM timing runs (`pytest tests/test_isolated.py -k "tc21 or tc22_dl"`).
+
+# Test results
+
+## TC-24 / NFR-07: one-command Docker Compose deployment
+
+- Date: 2026-11-17
+- Machine: Darwin 23.5.0, arm64; Docker version 29.7.2, build a7dcaa6
+- Command: `docker compose up --build -d --wait` (after `docker compose down -v`, fresh `.env`; cold build: images and build cache removed first)
+- Result: all services healthy
+- Build + start time: 2.3 minutes (requirement: within 30 minutes) -> PASS
+- Smoke test (`scripts/smoke.py`): PASS
+
+Service status:
+```
+classical: Up 31 seconds (healthy)
+dl: Up 31 seconds (healthy)
+evaluation: Up 31 seconds (healthy)
+features: Up 31 seconds (healthy)
+gateway: Up 19 seconds (healthy)
+ingestion: Up 31 seconds (healthy)
+orchestrator: Up 24 seconds (healthy)
+qml: Up 31 seconds (healthy)
+registry: Up 31 seconds (healthy)
+report: Up 31 seconds (healthy)
+```
+run on project owners machine (macOS)
