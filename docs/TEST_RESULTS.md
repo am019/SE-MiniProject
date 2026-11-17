@@ -32,7 +32,7 @@ Target: all services healthy in under 30 minutes after `docker compose up --buil
 
 | Run | Start | Ready | Total | Notes |
 |---|---|---|---|---|
-| First build (images built from scratch) | between 14:12 and 14:20 (exact time not recorded, no stopwatch) | about 14:23 | about 11 min or less | The build was observed in progress at 14:20. `docker compose ps` showed every service `(healthy)`; the sign-in page loaded. |
+| First build (images built from scratch) | 14:20  | about 14:23 | about 13 min or less | The build was observed in progress at 14:20. `docker compose ps` showed every service `(healthy)`; the sign-in page loaded. |
 | Rebuild with Docker's layer cache | 14:30 | 14:33 | 3 min | Not a clean-machine time, because Docker reused cached layers. |
 
 Result: pass for both runs. The first-build time is an estimate because no stopwatch was running.
